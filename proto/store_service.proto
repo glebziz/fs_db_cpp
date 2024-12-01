@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package store;
+
+option go_package = "fs_fb/proto/store";
+
+enum ChunkSize {
+  EMPTY = 0;
+  MAX = 2048;
+}
+
+service StoreV1 {
+  rpc SetFile(stream SetFileRequest) returns(SetFileResponse) {}
+  rpc GetFile(GetFileRequest) returns(stream GetFileResponse) {}
+  rpc GetKeys(GetKeysRequest) returns(GetKeysResponse) {}
+  rpc DeleteFile(DeleteFileRequest) returns(DeleteFileResponse) {}
+
+  // Tx
+  rpc BeginTx(BeginTxRequest) returns(BeginTxResponse) {}
+  rpc CommitTx(CommitTxRequest) returns(CommitTxResponse) {}
+  rpc RollbackTx(RollbackTxRequest) returns(RollbackTxResponse) {}
+}
+
+enum TxIsoLevel {
+  ISO_LEVEL_READ_UNCOMMITTED = 0;
+  ISO_LEVEL_READ_COMMITTED = 1;
+  ISO_LEVEL_REPEATABLE_READ = 2;
+  ISO_LEVEL_SERIALIZABLE = 3;
+}
+
+message FileHeader {
+  string key = 1;
+  reserved 2;
+}
+
+message SetFileRequest {
+  oneof data {
+    FileHeader header = 1;
+    bytes chunk = 2;
+  }
+}
+
+message SetFileResponse {}
+
+message GetFileRequest {
+  string key = 1;
+}
+
+message GetFileResponse {
+  oneof data {
+    bytes chunk = 1;
+    FileHeader header = 2;
+  }
+}
+
+message GetKeysRequest {}
+
+message GetKeysResponse {
+  repeated string keys = 1;
+}
+
+message DeleteFileRequest {
+  string key = 1;
+}
+
+message DeleteFileResponse {}
+
+message BeginTxRequest {
+  TxIsoLevel isoLevel = 1;
+}
+
+message BeginTxResponse {
+  string id = 1;
+}
+
+message CommitTxRequest {}
+
+message CommitTxResponse {}
+
+message RollbackTxRequest {}
+
+message RollbackTxResponse {}
