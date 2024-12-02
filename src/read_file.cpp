@@ -6,6 +6,10 @@ fs_db::ReadFile::ReadFile(ReadFile &&other) noexcept: buf(std::move(other.buf)),
 
 fs_db::ReadFile::ReadFile(std::unique_ptr<grpc::ClientContext> &&ctx, std::unique_ptr<grpc::ClientReader<store::GetFileResponse>> &&r): ctx(std::move(ctx)), r(std::move(r)) {}
 
+fs_db::ReadFile::~ReadFile() {
+    Close();
+}
+
 size_t fs_db::ReadFile::Read(char data[], size_t size) {
     if (r == nullptr) {
         return 0;
@@ -13,7 +17,6 @@ size_t fs_db::ReadFile::Read(char data[], size_t size) {
 
     store::GetFileResponse msg;
     while (buf.size() < size && r->Read(&msg)) {
-        handleError(r->Finish());
         buf += msg.chunk();
     }
 
@@ -23,6 +26,18 @@ size_t fs_db::ReadFile::Read(char data[], size_t size) {
 
     return size;
 }
+
+void fs_db::ReadFile::Close() {
+    if (r == nullptr) {
+        return;
+    }
+
+    handleError(r->Finish());
+    buf.clear();
+    ctx.reset();
+    r.reset();
+}
+
 
 fs_db::ReadFile &fs_db::ReadFile::operator=(ReadFile &&other) noexcept {
     buf = std::move(other.buf);
@@ -38,7 +53,13 @@ fs_db_err fs_db_rf_read(fs_db_rf *rf, char data[], const size_t size, size_t *re
     });
 }
 
-void fs_db_rf_destroy(fs_db_rf **rf) {
+fs_db_err fs_db_rf_close(fs_db_rf **rf) {
+    const fs_db_err err = fs_db::Exception::try_catch([&] {
+        (*rf)->Close();
+    });
+
     delete *rf;
     *rf = nullptr;
+
+    return err;
 }

@@ -26,8 +26,10 @@ namespace fs_db {
 
     public:
         ReadFile(ReadFile &&other) noexcept;
+        ~ReadFile();
 
         size_t Read(char data[], size_t size);
+        void Close();
 
         ReadFile &operator=(ReadFile &&other) noexcept;
     };
@@ -45,7 +47,7 @@ typedef struct fs_db_rf fs_db_rf;
 extern "C" {
 #endif
     fs_db_err fs_db_rf_read(fs_db_rf *rf, char data[], size_t size, size_t *read);
-    void fs_db_rf_destroy(fs_db_rf **rf);
+    fs_db_err fs_db_rf_close(fs_db_rf **rf);
 #ifdef __cplusplus
 }
 #endif

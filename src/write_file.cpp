@@ -47,6 +47,8 @@ void fs_db::WriteFile::Close() {
 
     w->WritesDone();
     handleError(w->Finish());
+    ctx.reset();
+    resp.reset();
     w.reset();
 }
 
